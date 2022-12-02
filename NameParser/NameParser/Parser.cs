@@ -376,19 +376,26 @@ namespace NameParser
             {
                 // no commas, title first middle middle middle last suffix
                 //            part[0]
-
                 var pieces = ParsePieces(parts);
 
-                //Set Last is first if we find an initial at the end
+                //Set LastIsFirst if we find an initial at the end
                 if (IsAnInitial(pieces[pieces.Length - 1])) LastIsFirst = true;
 
+                //Set LastIsFirst where ends with Initial then Suffix
+                if (pieces.Length > 2 && IsAnInitial(pieces[pieces.Length - 2]) && IsSuffix(pieces[pieces.Length - 1])) LastIsFirst = true;
+                
                 for (var i = 0; i < pieces.Length; i++)
                 {
                     var piece = pieces[i];
                     var nxt = i == pieces.Length - 1 ? string.Empty : pieces[i + 1];                                      
 
+                    // first piece is an initial then consider next name a middle name but wants to be referred as thier first name
+                    if (i == 0 && IsAnInitial(piece))
+                    {
+                        _MiddleList.Add(piece);
+                    }
                     // title must have a next piece, unless it's just a title
-                    if (IsTitle(piece) && (!string.IsNullOrEmpty(nxt) || pieces.Length == 1))
+                    else if (IsTitle(piece) && (!string.IsNullOrEmpty(nxt) || pieces.Length == 1))
                     {
                         // some last names appear as titles (https://github.com/aeshirey/NameParserSharp/issues/9)
                         // if we've already parsed out titles, first, or middle names, something appearing as a title may in fact be a last name
@@ -401,27 +408,43 @@ namespace NameParser
                             _TitleList.Add(piece);
                         }
                     }
-                    else if (string.IsNullOrEmpty(First))
-                    {
+                    else if (string.IsNullOrEmpty(First) && !LastIsFirst)
+                    {                    
                         _FirstList.Add(piece);
                     }
-                    else if (AreSuffixes(pieces.Skip(i + 1)))
+                    else if (AreSuffixes(pieces.Skip(i + 1)) )
                     {
-                        _LastList.Add(piece);
+                        if (IsAnInitial(piece) && Middle != piece)
+                        {
+                            _MiddleList.Add(piece);
+                            break;
+                        }
+                        if (Middle != piece)
+                        {
+                            _LastList.Add(piece);
+                        }
                         _SuffixList = _SuffixList.Concat(pieces.Skip(i + 1)).ToList();
                         break;
                     }                    
                     else if (!string.IsNullOrEmpty(nxt))
                     {
-                        //Last is an initial so set that, current piece is first and first is last
-                        if (LastIsFirst && IsAnInitial(nxt))
+                        //Last is an initial so set that but ends with Suffix
+                        if (string.IsNullOrEmpty(First) && LastIsFirst)
                         {
-                            _MiddleList.Add(nxt);
-                            _LastList.Add(_FirstList.First());
-                            _FirstList.RemoveAt(0);
                             _FirstList.Add(piece);
                         }
-                        else
+                        //Last is an initial so set that, current piece is first and first is last
+                        else if (LastIsFirst && IsAnInitial(nxt) && string.IsNullOrEmpty(Last))
+                        {
+                            _MiddleList.Add(nxt);
+                            if (_FirstList.Count > 0)
+                            {
+                                _LastList.Add(_FirstList.First());
+                                _FirstList.RemoveAt(0);
+                                _FirstList.Add(piece);
+                            }
+                        }
+                        else if (!_MiddleList.Any())
                         {
                             // another component exists, so this is likely a middle name
                             _MiddleList.Add(piece);
@@ -447,9 +470,9 @@ namespace NameParser
                             }
                         }
                     }
-                    else if (AdditionalName._LastList.Any() && IsAnInitial(piece))
+                    else if (AdditionalName._LastList.Any() && IsAnInitial(piece) && Middle != piece)
                     {
-                        // the additional name has a last, and this one looks like a middle. we'll save as a middle and later will copy the last name.
+                        // the additional name has a last, and this one looks like a middle. we'll save as a middle and later will copy the last name.                        
                         _MiddleList.Add(piece);
                     }
                     else

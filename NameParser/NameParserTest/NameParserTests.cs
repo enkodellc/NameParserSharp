@@ -13,6 +13,32 @@ namespace NameParseTest
         {
             var parsed = new HumanName(null);
         }
+        
+        [TestMethod]
+        public void StartsWithInitial()
+        {
+            var parsed = new HumanName("M. AUBREY RILEY");
+
+            Assert.AreEqual(string.Empty, parsed.Title);
+            Assert.AreEqual("AUBREY", parsed.First);
+            Assert.AreEqual("M.", parsed.Middle);
+            Assert.AreEqual("RILEY", parsed.Last);
+            Assert.AreEqual(string.Empty, parsed.Suffix);
+            Assert.AreEqual(string.Empty, parsed.Nickname);
+        }
+
+        [TestMethod]
+        public void SuffixAfterEndingInitial()
+        {
+            var parsed = new HumanName("DUCH WALTER F JR");
+
+            Assert.AreEqual(string.Empty, parsed.Title);
+            Assert.AreEqual("WALTER", parsed.First);
+            Assert.AreEqual("F", parsed.Middle);
+            Assert.AreEqual("DUCH", parsed.Last);
+            Assert.AreEqual("JR", parsed.Suffix);
+            Assert.AreEqual(string.Empty, parsed.Nickname);
+        }
 
         [TestMethod]
         public void LastNameCommaFirst()

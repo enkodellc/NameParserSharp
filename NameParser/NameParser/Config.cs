@@ -47,7 +47,7 @@
         public static readonly ISet<string> Suffixes = new HashSet<string>()
         {
             "esq",
-            "esquire",
+            "esquire",          
             "jr",
             "jnr",
             "sr",
